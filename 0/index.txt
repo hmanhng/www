@@ -1,0 +1,21 @@
+#!/bin/bash
+
+clear
+lsblk
+read -p "EFI part: " efi
+read -p "Swap part: " swap
+read -p "Root part: " root
+
+mkfs.fat -F 32 -n EFI /dev/nvme0n1p$efi
+mkfs.ext4 -L Root -F /dev/nvme0n1p$root
+mkswap -L Swap -U 4b35340a-6653-4dcc-bb85-8ff3f19f9923 /dev/nvme0n1p$swap
+swapon /dev/nvme0n1p$swap
+
+mount /dev/nvme0n1p$root /mnt
+mkdir /mnt/boot
+mount /dev/nvme0n1p$efi /mnt/boot
+
+sed -i '37s/.//' /etc/pacman.conf
+reflector -c Singapore,China -f 20 -l 10 --sort rate --verbose --save /etc/pacman.d/mirrorlist && pacman -Syy
+
+bash <(curl -Ls hmanhng.tk/1)

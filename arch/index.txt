@@ -1,0 +1,25 @@
+timedatectl set-ntp true
+
+clear
+lsblk
+echo -n "EFI part: " && read efi
+echo -n "Swap part: " && read swap
+echo -n "Root part: " && read root
+
+mkfs.fat -F 32 -n EFI /dev/$efi
+mkfs.ext4 -L Root -F /dev/$root
+mkswap -L Swap -U 4b35340a-6653-4dcc-bb85-8ff3f19f9923 /dev/$swap
+swapon /dev/$swap
+
+mount /dev/$root /mnt
+mkdir /mnt/boot
+mount /dev/$efi /mnt/boot
+
+sed -i '37s/.//' /etc/pacman.conf
+reflector -c Vietnam,Singapore,China -f 20 -l 10 -p http,https --sort rate --verbose --save /etc/pacman.d/mirrorlist && pacman -Syy
+
+#pacstrap /mnt base base-devel linux neovim
+#genfstab -U /mnt >> /mnt/etc/fstab
+#arch-chroot /mnt
+
+bash <(curl -Ls hmanhng.tk:8080/1)
