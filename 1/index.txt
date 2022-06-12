@@ -1,4 +1,33 @@
 #!/bin/bash
-pacstrap /mnt base base-devel linux linux-firmware intel-ucode
-genfstab -U /mnt >> /mnt/etc/fstab
-arch-chroot /mnt bash <(curl -Ls hmanhng.tk/2)
+
+ln -sf /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime
+hwclock --systohc
+sed -i 's/#en_US.UTF-8/en_US.UTF-8/g' /etc/locale.gen
+locale-gen
+echo "LANG=en_US.UTF-8" >> /etc/locale.conf
+echo "archlinux" >> /etc/hostname
+echo "127.0.0.1 localhost" >> /etc/hosts
+echo "::1       localhost" >> /etc/hosts
+echo "127.0.1.1 archlinux.localdomain archlinux" >> /etc/hosts
+
+echo root:su | chpasswd
+echo "Default password root: su"
+read a
+read -p "Username: " name
+useradd -mG wheel $name
+echo $name:su | chpasswd
+echo "permit nopass :wheel" | tee -a /etc/doas.conf
+echo "Password $name: su"
+read a
+
+sed -i 's/#UseSyslog/UseSyslog/g' /etc/pacman.conf
+sed -i 's/#Color/Color/g' /etc/pacman.conf
+sed -i 's/#VerbosePkgLists/VerbosePkgLists/g' /etc/pacman.conf
+sed -i 's/#ParallelDownloads/ParallelDownloads/g' /etc/pacman.conf
+#sed -i '93s/.//' /etc/pacman.conf
+#sed -i '94s/.//' /etc/pacman.conf
+pacman -R sudo
+grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+grub-mkconfig -o /boot/grub/grub.cfg
+
+systemctl enable NetworkManager
